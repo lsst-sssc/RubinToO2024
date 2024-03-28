@@ -1,10 +1,11 @@
 # author: Igor Andreoni <igor.andreoni@gmail.com.>
 # author: Tim Lister <tlister@lco.global>
 # Formulae from https://smtn-002.lsst.io/v/OPSIM-1134/index.html
-# with delta magnitudes for the twilight survey from Lynne Jones
+# with delta magnitudes for the twilight survey and trailing loss code from Lynne Jones
 
 import warnings
 import numpy as np
+from astropy import units as u
 
 params = {
           "u": {"Cm": 22.97,
@@ -57,6 +58,53 @@ params = {
                 }
           }
 
+@u.quantity_input(velocity=u.deg/u.day, seeing=u.arcsec, exptime=u.s)
+def calc_trailing_losses(velocity=2*u.deg/u.day, seeing=0.8*u.arcsec, exptime=30.0*u.s):
+    """Calculate the detection and SNR trailing losses.
+    Code ported from the original Lynne Jones rubin_sim.moving_objects.base_obs
+    code and modified slightly to require AstroPy units function arguments
+    by Tim Lister.
+
+    'Trailing' losses = loss in sensitivity due to the photons from the
+    source being spread over more pixels; thus more sky background is
+    included when calculating the flux from the object and thus the SNR
+    is lower than for an equivalent brightness stationary/PSF-like source.
+    dmag_trail represents this loss.
+
+    'Detection' trailing losses = loss in sensitivity due to the photons
+    from the source being spread over more pixels, in a non-stellar-PSF
+    way, while source detection is (typically) done using a stellar PSF
+    filter and 5-sigma cutoff values based on assuming peaks from
+    stellar PSF's above the background; thus the SNR is lower than for an
+    equivalent brightness stationary/PSF-like source (and by a greater
+    factor than just the simple SNR trailing loss above).
+    dmag_detect represents this loss.
+
+    Parameters
+    ----------
+    velocity : `astropy.units.Quantity`
+        The velocity of the moving objects, in deg/day.
+    seeing : `astropy.units.Quantity`
+        The seeing of the images, in arcseconds.
+    exptime : `astropy.units.Quantity`, optional
+        The exposure time of the images, in seconds. Default 30.
+
+    Returns
+    -------
+    dmag Trail, dmag_detect : (`np.ndarray` `np.ndarray`)
+    or (`float`, `float`)
+        dmag_trail and dmag_detect for each set of
+        velocity/seeing/texp values.
+    """
+
+    a_trail = 0.761
+    b_trail = 1.162
+    a_det = 0.420
+    b_det = 0.003
+    x = velocity.to(u.deg/u.day).value * exptime.to(u.s).value / seeing.to(u.arcsec).value / 24.0
+    dmag_trail = 1.25 * np.log10(1 + a_trail * x**2 / (1 + b_trail * x))
+    dmag_detect = 1.25 * np.log10(1 + a_det * x**2 / (1 + b_det * x))
+    return (dmag_trail, dmag_detect)
 
 def get_exptime(m5, filt, X=1.0, twilight=False):
     """

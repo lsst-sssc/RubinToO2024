@@ -2,8 +2,9 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_allclose
+import astropy.units as u
 
-from etc import get_exptime, get_m5
+from etc import get_exptime, get_m5, calc_trailing_losses
 
 class TestEtc:
     @pytest.fixture(autouse=True)
@@ -128,3 +129,27 @@ class TestEtc:
         for filt in self.filters_all:
             m5_out = get_m5(self.exptime, filt, X=2.92, twilight=True)
             assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
+
+class TestCalcTrailngLosses:
+    @pytest.fixture(autouse=True)
+    def setUp(self):
+        self.exptime = 30.0
+        self.max_rate = 10*u.deg/u.day
+
+    def test_defaults(self):
+        expected_losses = (0.5196914559265092, 0.8805600326623719)
+
+        losses = calc_trailing_losses()
+
+        assert_allclose(expected_losses, losses)
+
+    def test_bad_floats(self):
+        with pytest.raises(Exception):
+            losses = calc_trailing_losses(2, 0.8, 15)
+
+    def test_different_units(self):
+        expected_losses = (0.5196914559265092, 0.8805600326623719)
+
+        losses = calc_trailing_losses(5*u.arcsec/u.min, exptime=0.5*u.min)
+
+        assert_allclose(expected_losses, losses)
