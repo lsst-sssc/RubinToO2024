@@ -91,7 +91,7 @@ def calc_trailing_losses(velocity=2*u.deg/u.day, seeing=0.8*u.arcsec, exptime=30
 
     Returns
     -------
-    dmag Trail, dmag_detect : (`np.ndarray` `np.ndarray`)
+    dmag trail, dmag_detect : (`np.ndarray` `np.ndarray`)
     or (`float`, `float`)
         dmag_trail and dmag_detect for each set of
         velocity/seeing/texp values.
@@ -105,6 +105,110 @@ def calc_trailing_losses(velocity=2*u.deg/u.day, seeing=0.8*u.arcsec, exptime=30
     dmag_trail = 1.25 * np.log10(1 + a_trail * x**2 / (1 + b_trail * x))
     dmag_detect = 1.25 * np.log10(1 + a_det * x**2 / (1 + b_det * x))
     return (dmag_trail, dmag_detect)
+
+def calc_event_time_budget(n_fields=1, filters=['griz'], exptimes=[30, 30, 30, 30]):
+    """Calculates the time to follow a single ToO event in the specified filters
+    and exposure times. Assumes only a single repeat of the observation pattern
+    and not a (repeated) cadence.
+
+    Parameters
+    ----------
+    n_fields : `int`
+        The number of fields to be tiled for the event
+    filters : `list`
+        The filters to be observed. If the full set of ['ugrizy'] are specified,
+        one will be dropped and the exposure times for u and z will be scaled
+        by the ratio of the mounted time.
+    exptimes : `list`, optional
+        The exposure time of the images, in each filter in seconds. Default 30.
+
+    Returns
+    -------
+    budget_strategy_nfields_hr : `float`
+        total time (in hours) to execute the strategy over the <n_fields>.
+    """
+
+    # Overheads
+    overhead_between_exposures = 7.0  # in seconds
+
+    # Overhead first slew per visit, assuming it may be further away than tiling
+    overhead_first_slew = 30
+
+    # Overhead for slew and settle, assuming closer fields beyond the initial slew (not currently used)
+    overhead_slew_settle = 10
+
+    # Overhead for filter change
+    overhead_filter_change = 120.0  # in seconds
+
+     # Initialize total overhead slews
+    overhead_first_slew_total = 0
+    # Initialize total overhead readouts
+    overhead_filter_change_total = 0
+    # Initialize total overhead readouts
+    overhead_between_exposures_total = 0
+    # Initialize total exposure time
+    exptime_total = 0
+
+    # Main calc
+    # Add overheads for the first slew
+    overhead_first_slew_total += overhead_first_slew
+    # Initialize
+    exptime_visit = 0
+    # Check if 6 filters are given
+    if len(filters) == 6:
+        # add overhead between exposures
+        overhead_between_exposures_visit = overhead_between_exposures * 4
+        # Add overhead change of filter, assuming the first filter changes, too
+        overhead_filter_change_visit =  overhead_filter_change * 5
+        # If 6 filters are given, one must be dropped.
+        # Indicate here the number of days per month in which u band is used.
+        # Y band will be assumed for the other visits. The total time budget will be a combination of the two.
+        u_days_ratio = 14./30
+        # Combine exposure times between u and y
+        for filt, exptime in zip(filters, exptimes):
+            if filt == "u":
+                exptime_visit += exptime * u_days_ratio
+            elif filt == "y":
+                exptime_visit += exptime * (1-u_days_ratio)
+            else:
+                exptime_visit += exptime
+    # In case <= 5 filters are given for this visit
+    else:
+        overhead_between_exposures_visit = overhead_between_exposures * len(exptimes) # Not sure why the original '-1' - still have to pay final readout cost shirley?
+        # Add overhead change of filter, assuming the first filter changes, too
+        overhead_filter_change_visit = overhead_filter_change * len(exptimes)
+        # Exposure time
+        exptime_visit = np.sum(exptimes)
+        # Add the exposure times to the epoch to the total
+        exptime_total += exptime_visit
+        # Add overheads
+        overhead_between_exposures_total += overhead_between_exposures_visit
+        overhead_filter_change_total += overhead_filter_change_visit
+        # Print results for the epoch
+        print(f"  Epoch T+4 hr:")
+        print(f"    exposure times: {'{:.0f}'.format(exptime_visit)}s")
+        print(f"    overhead change filter: {overhead_filter_change_visit}s")
+        print(f"    overhead between exposures: {overhead_between_exposures_visit}s")
+
+    # calculate the total overheads, convert overhead from seconds to hours
+    # IMPORTANT: the filter change and first slew overhead must to be divided by the number of fields,
+    # if we complete the tiling before changing filters
+    overheads_total_nfields = np.sum((overhead_between_exposures_total * n_fields)/60/60 +
+                       overhead_first_slew_total/n_fields/60/60 +
+                       overhead_filter_change_total/n_fields/60/60)
+
+    # calculate the total exposure time per field/pointing in hours
+    total_exposure_time_hr = exptime_total/60/60
+
+    # Calculate the total time budget in hours per event
+    budget_strategy_nfields_hr = total_exposure_time_hr * n_fields + overheads_total_nfields
+
+    print(f"Total exposure time per pointing: {'{:.3f}'.format(total_exposure_time_hr)}hr")
+    #print(f"Total overheads per pointing, assuming {n_fields} fields: {'{:.2f}'.format(overheads_total_nfields)}hr ({'{:.2f}'.format(100*overheads/budget_strategy_hr)}% of total budget)")
+    print(f"Total time for {n_fields} fields: {'{:.3f}'.format(budget_strategy_nfields_hr)}hr")
+    print("-- \n")
+
+    return budget_strategy_nfields_hr
 
 def get_exptime(m5, filt, X=1.0, twilight=False):
     """

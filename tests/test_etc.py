@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import astropy.units as u
 
-from etc import get_exptime, get_m5, calc_trailing_losses
+from etc import get_exptime, get_m5, calc_trailing_losses, calc_event_time_budget
 
 class TestEtc:
     @pytest.fixture(autouse=True)
@@ -153,3 +153,18 @@ class TestCalcTrailngLosses:
         losses = calc_trailing_losses(5*u.arcsec/u.min, exptime=0.5*u.min)
 
         assert_allclose(expected_losses, losses)
+
+class TestCalcEventTimeBudget:
+    def test_1_field(self):
+        expected_time_used = 0.18277777777777776
+
+        time_used = calc_event_time_budget(1)
+
+        assert_allclose(expected_time_used, time_used, rtol=1e-4)
+
+    def test_2_fields(self):
+        expected_time_used = 0.153056
+
+        time_used = calc_event_time_budget(2)
+
+        assert_allclose(expected_time_used, time_used, rtol=1e-4)
