@@ -300,7 +300,8 @@ if __name__ == "__main__":
     # Testing getting exptime given a list of mag limits
     m5s = [23.70, 24.97, 24.52, 24.13, 23.56, 22.55]
     for m5, filt in zip(m5s, "ugrizy"):
-        # m5_out = get_m5(exptime, filt, X=1.)
-        exptime_out = get_exptime(m5, filt, X=1.)
-        # print('{:.2f}'.format(m5_out))
-        print('{:.2f}'.format(exptime_out))
+        exptime = 30.0
+        m5_out = get_m5(exptime, filt, X=2.92, twilight=True)
+        exptime_out = get_exptime(m5, filt, X=2.92, twilight=True)
+        print('{}: {:.4f}'.format(filt, m5_out))
+        # print('{}: {:.4f}'.format(filt, exptime_out))
