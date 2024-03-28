@@ -1,6 +1,9 @@
 # author: Igor Andreoni <igor.andreoni@gmail.com.>
+# author: Tim Lister <tlister@lco.global>
 # Formulae from https://smtn-002.lsst.io/v/OPSIM-1134/index.html
+# with delta magnitudes for the twilight survey from Lynne Jones
 
+import warnings
 import numpy as np
 
 params = {
@@ -22,21 +25,27 @@ params = {
                 "dCm_inf": 0.04,
                 "zp": 28.36,
                 "fwhm": 0.83,
+                "fwhm_twilight": 1.43,
                 "m_darksky": 21.2,
+                "m_twilight": 19.47, # median value
                 "k_atm": 0.13
                 },
           "i": {"Cm": 24.54,
                 "dCm_inf": 0.03,
                 "zp": 28.17,
                 "fwhm": 0.80,
+                "fwhm_twilight": 1.49,
                 "m_darksky": 20.46,
+                "m_twilight": 18.68, # median value
                 "k_atm": 0.10
                 },
           "z": {"Cm": 24.37,
                 "dCm_inf": 0.02,
                 "zp": 27.78,
                 "fwhm": 0.78,
+                "fwhm_twilight": 1.42,
                 "m_darksky": 19.61,
+                "m_twilight": 17.92, # median value
                 "k_atm": 0.07
                 },
           "y": {"Cm": 23.84,
@@ -49,7 +58,7 @@ params = {
           }
 
 
-def get_exptime(m5, filt, X=1.):
+def get_exptime(m5, filt, X=1.0, twilight=False):
     """
     Given a certain depth, return the exposure time
 
@@ -61,6 +70,8 @@ def get_exptime(m5, filt, X=1.):
         filter (one of ugrizy)
     X float
         airmass
+    twilight bool
+        Whether to use the twilight survey numbers
 
     Returns
     -------
@@ -74,6 +85,11 @@ def get_exptime(m5, filt, X=1.):
     m_darksky = params[filt]["m_darksky"]
     # Important: assuming darksky
     m_sky = m_darksky
+    if twilight:
+        m_sky = params[filt].get('m_twilight', -99.0)
+        fwhm = params[filt].get("fwhm_twilight", -99.0)
+        # Suppress warnings for the invalid filters
+        warnings.simplefilter('ignore', RuntimeWarning)
     # FIXME approximation dCm=0 (fine within 0.3s for 30s exposures)
     # dCm_inf = params[filt]["dCm_inf"]
     # Tscale = exptime / 30. * 10**(-1 * 0.4 * (m_sky - m_darksky))
