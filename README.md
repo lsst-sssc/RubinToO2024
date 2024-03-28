@@ -1,12 +1,12 @@
 # RubinToO2024
-Rubin ToO 2024: Envisioning the Vera C. Rubin Observatory LSST Target of Opportunity program
+Rubin ToO 2024: Envisioning the Vera C. Rubin Observatory LSST Target of Opportunity program for Solar System Science
 
-https://lssttooworkshop.github.io
+This is a fork of https://lssttooworkshop.github.io with a small amount of Solar System-specific added features.
 
 The notebook plots_RubinToO2024.ipynb has the following features:
 - visualization of the ToO observing strategies
 - light curves plots
-- exposure time calculator (ETC) to convert exposure times to limiting magnitudes and vice-versa
+- exposure time calculator (ETC) to convert exposure times to limiting magnitudes and vice-versa and modified to account for the near-Sun twilight survey
 - time budget calculations
 
 
