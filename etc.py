@@ -103,7 +103,7 @@ def get_exptime(m5, filt, X=1.0, twilight=False):
     return exptime
 
 
-def get_m5(exptime, filt, X=1.):
+def get_m5(exptime, filt, X=1.0, twilight=False):
     """
     Given a certain exposure time return 5sigma depth
     Parameters
@@ -114,6 +114,8 @@ def get_m5(exptime, filt, X=1.):
         filter (one of ugrizy)
     X float
         airmass
+    twilight bool
+        Whether to use the twilight survey numbers
 
     Returns
     -------
@@ -128,6 +130,11 @@ def get_m5(exptime, filt, X=1.):
     m_darksky = params[filt]["m_darksky"]
     # Important: assuming darksky
     m_sky = m_darksky
+    if twilight:
+        m_sky = params[filt].get('m_twilight', -99.0)
+        fwhm = params[filt].get("fwhm_twilight", -99.0)
+        # Suppress warnings for the invalid filters
+        warnings.simplefilter('ignore', RuntimeWarning)
     # Calculate m5
     Tscale = exptime / 30. * 10**(-1 * 0.4 * (m_sky - m_darksky))
     dCm = dCm_inf - 1.25 * np.log10(1 + (10**(0.8 * dCm_inf) - 1) / Tscale)

@@ -89,3 +89,42 @@ class TestEtc:
         for filt in self.filters_all:
             m5_out = get_m5(self.exptime, filt, X=1.2)
             assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
+
+    def test_twilight_m5_zenith(self):
+        expected_m5s = { 'u': np.nan,
+                         'g': np.nan,
+                         'r': 23.0910,
+                         'i': 22.5838,
+                         'z': 22.0777,
+                         'y': np.nan
+                       }
+
+        for filt in self.filters_all:
+            m5_out = get_m5(self.exptime, filt, X=1.0, twilight=True)
+            assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
+
+    def test_twilight_m5_am12(self):
+        expected_m5s = { 'u': np.nan,
+                         'g': np.nan,
+                         'r': 23.0650,
+                         'i': 22.5638,
+                         'z': 22.0637,
+                         'y': np.nan
+                       }
+
+        for filt in self.filters_all:
+            m5_out = get_m5(self.exptime, filt, X=1.2, twilight=True)
+            assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
+
+    def test_twilight_m5_alt20(self):
+        expected_m5s = { 'u': np.nan,
+                         'g': np.nan,
+                         'r': 22.8414,
+                         'i': 22.3918,
+                         'z': 21.9433,
+                         'y': np.nan
+                       }
+
+        for filt in self.filters_all:
+            m5_out = get_m5(self.exptime, filt, X=2.92, twilight=True)
+            assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
