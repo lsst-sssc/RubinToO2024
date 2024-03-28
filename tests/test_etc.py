@@ -13,6 +13,19 @@ class TestEtc:
         self.exptime = 30.0
         self.filters_all = "ugrizy"
 
+    def test_darksky_exptime_default(self):
+        expected_exptimes = { 'u': 35.7850,
+                              'g': 32.4761,
+                              'r': 31.7601,
+                              'i': 31.4127,
+                              'z': 30.9253,
+                              'y': 31.8972
+                            }
+
+        for m5, filt in zip(self.m5s, self.filters_all):
+            exptime_out = get_exptime(m5, filt)
+            assert_allclose(exptime_out, expected_exptimes[filt], rtol=1e-4)
+
     def test_darksky_exptime_zenith(self):
         expected_exptimes = { 'u': 30.0954,
                               'g': 30.0582,
@@ -64,6 +77,19 @@ class TestEtc:
         for m5, filt in zip(self.m5s, self.filters_all):
             exptime_out = get_exptime(m5, filt, X=2.92, twilight=True)
             assert_allclose(exptime_out, expected_exptimes[filt], rtol=1e-4)
+
+    def test_darksky_m5_default(self):
+        expected_m5s = { 'u': 23.6043,
+                         'g': 24.9269,
+                         'r': 24.4890,
+                         'i': 24.1050,
+                         'z': 23.5435,
+                         'y': 22.5167
+                       }
+
+        for filt in self.filters_all:
+            m5_out = get_m5(self.exptime, filt)
+            assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
 
     def test_darksky_m5_zenith(self):
         expected_m5s = { 'u': 23.6983,

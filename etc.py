@@ -210,7 +210,7 @@ def calc_event_time_budget(n_fields=1, filters=['griz'], exptimes=[30, 30, 30, 3
 
     return budget_strategy_nfields_hr
 
-def get_exptime(m5, filt, X=1.0, twilight=False):
+def get_exptime(m5, filt, X=1.2, twilight=False):
     """
     Given a certain depth, return the exposure time
 
@@ -255,7 +255,7 @@ def get_exptime(m5, filt, X=1.0, twilight=False):
     return exptime
 
 
-def get_m5(exptime, filt, X=1.0, twilight=False):
+def get_m5(exptime, filt, X=1.2, twilight=False):
     """
     Given a certain exposure time return 5sigma depth
     Parameters
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     m5s = [23.70, 24.97, 24.52, 24.13, 23.56, 22.55]
     for m5, filt in zip(m5s, "ugrizy"):
         exptime = 30.0
-        m5_out = get_m5(exptime, filt, X=2.92, twilight=True)
-        exptime_out = get_exptime(m5, filt, X=2.92, twilight=True)
+        m5_out = get_m5(exptime, filt, X=1.2, twilight=False)
+        exptime_out = get_exptime(m5, filt, X=1.2, twilight=False)
         print('{}: {:.4f}'.format(filt, m5_out))
-        # print('{}: {:.4f}'.format(filt, exptime_out))
+        #print('{}: {:.4f}'.format(filt, exptime_out))
