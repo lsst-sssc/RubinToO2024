@@ -12,6 +12,9 @@ class TestEtc:
         self.m5s = [23.70, 24.97, 24.52, 24.13, 23.56, 22.55]
         self.exptime = 30.0
         self.filters_all = "ugrizy"
+        self.low_speed = 1.0*u.arcsec/u.minute
+        self.med_speed = 2.0*u.deg/u.day
+        self.top_speed = 10.0*u.deg/u.day
 
     def test_darksky_exptime_default(self):
         expected_exptimes = { 'u': 35.7850,
@@ -117,6 +120,19 @@ class TestEtc:
             m5_out = get_m5(self.exptime, filt, X=1.2)
             assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
 
+    def test_darksky_m5_default_med_speed(self):
+        expected_m5s = { 'u': 22.8414,
+                         'g': 24.1179,
+                         'r': 23.6402,
+                         'i': 23.2245,
+                         'z': 22.6409,
+                         'y': 21.5912
+                       }
+
+        for filt in self.filters_all:
+            m5_out = get_m5(self.exptime, filt, velocity=self.med_speed)
+            assert_allclose(m5_out, expected_m5s[filt], rtol=1e-4)
+
     def test_twilight_m5_zenith(self):
         expected_m5s = { 'u': np.nan,
                          'g': np.nan,
@@ -160,6 +176,8 @@ class TestCalcTrailngLosses:
     @pytest.fixture(autouse=True)
     def setUp(self):
         self.exptime = 30.0
+        self.low_speed = 1.0*u.arcsec/u.minute
+        self.med_speed = 2.0*u.deg/u.day
         self.max_rate = 10*u.deg/u.day
 
     def test_defaults(self):
@@ -179,6 +197,15 @@ class TestCalcTrailngLosses:
         losses = calc_trailing_losses(5*u.arcsec/u.min, exptime=0.5*u.min)
 
         assert_allclose(expected_losses, losses)
+
+    def test_low_speed_all_filters(self):
+        expected_losses = [ (0.076207, 0.070409),
+                            (0.081718, 0.076882),
+                            (0.086254, 0.082327),
+                            (0.089491, 0.086276)]
+        for i, fwhm in enumerate([0.87, 0.83, 0.80, 0.78] * u.arcsec):
+            losses = calc_trailing_losses(self.low_speed, fwhm, exptime=0.5*u.min)
+            assert_allclose(expected_losses[i], losses, rtol=1e-5)
 
 class TestCalcEventTimeBudget:
     def test_1_field(self):

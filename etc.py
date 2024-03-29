@@ -255,7 +255,7 @@ def get_exptime(m5, filt, X=1.2, twilight=False):
     return exptime
 
 
-def get_m5(exptime, filt, X=1.2, twilight=False):
+def get_m5(exptime, filt, X=1.2, velocity=0*u.deg/u.day, twilight=False):
     """
     Given a certain exposure time return 5sigma depth
     Parameters
@@ -287,11 +287,14 @@ def get_m5(exptime, filt, X=1.2, twilight=False):
         fwhm = params[filt].get("fwhm_twilight", -99.0)
         # Suppress warnings for the invalid filters
         warnings.simplefilter('ignore', RuntimeWarning)
+    # Calculate trailing losses, subtract the dmag_detect to account for the
+    # loss in depth reached due to trailing
+    dmag_trail, dmag_detect = calc_trailing_losses(velocity, fwhm*u.arcsec, exptime*u.s)
     # Calculate m5
     Tscale = exptime / 30. * 10**(-1 * 0.4 * (m_sky - m_darksky))
     dCm = dCm_inf - 1.25 * np.log10(1 + (10**(0.8 * dCm_inf) - 1) / Tscale)
     m5 = Cm + dCm + 0.5 * (m_sky - 21.) + 2.5 * np.log10(0.7 / fwhm) + \
-        1.25 * np.log10(exptime / 30.) - k_atm*(X - 1.0)
+        1.25 * np.log10(exptime / 30.) - k_atm*(X - 1.0) - dmag_detect
 
     return m5
 
@@ -301,7 +304,7 @@ if __name__ == "__main__":
     m5s = [23.70, 24.97, 24.52, 24.13, 23.56, 22.55]
     for m5, filt in zip(m5s, "ugrizy"):
         exptime = 30.0
-        m5_out = get_m5(exptime, filt, X=1.2, twilight=False)
+        m5_out = get_m5(exptime, filt, X=1.2, velocity=2.0*u.deg/u.day, twilight=False)
         exptime_out = get_exptime(m5, filt, X=1.2, twilight=False)
         print('{}: {:.4f}'.format(filt, m5_out))
         #print('{}: {:.4f}'.format(filt, exptime_out))
